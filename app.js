@@ -5,23 +5,25 @@ const database = firebase.database();
 const gridElement = document.querySelector('.grid-robots');
 const iso = new Isotope(gridElement, { itemSelector: '.card-robot', layoutMode: 'fitRows' });
 
-// Escuta o nó de paridades
 database.ref('paridades').on('value', (snapshot) => {
     const todasParidades = snapshot.val();
-    if (!todasParidades) return;
+    if (!todasParidades) {
+        console.log("Aguardando dados...");
+        return;
+    }
     
-    gridElement.innerHTML = ''; // Limpa o grid
+    gridElement.innerHTML = ''; 
 
     Object.keys(todasParidades).forEach(key => {
         const d = todasParidades[key];
+        // Proteção extra: verifica se relatorio_vortex existe
+        const tendencia = (d.relatorio_vortex && d.relatorio_vortex.tendencia) ? d.relatorio_vortex.tendencia : "LENDO";
+        const r1 = (d.robos && d.robos.r1) ? d.robos.r1 : { status: "LENDO", cor: "" };
+        const r2 = (d.robos && d.robos.r2) ? d.robos.r2 : { status: "LENDO", cor: "" };
+        const r3 = (d.robos && d.robos.r3) ? d.robos.r3 : { status: "LENDO", cor: "" };
+
         const nome = key.replace('-', '/');
         
-        // Proteção: Garante que os dados existem antes de exibir
-        const tendencia = d.relatorio_vortex ? d.relatorio_vortex.tendencia : "LENDO";
-        const r1 = d.robos ? d.robos.r1 : { status: "LENDO", cor: "" };
-        const r2 = d.robos ? d.robos.r2 : { status: "LENDO", cor: "" };
-        const r3 = d.robos ? d.robos.r3 : { status: "LENDO", cor: "" };
-
         const cardHTML = `
             <div class="card-robot ativo">
                 <div class="card-header">
@@ -38,5 +40,6 @@ database.ref('paridades').on('value', (snapshot) => {
         gridElement.insertAdjacentHTML('beforeend', cardHTML);
     });
     
-    setTimeout(() => { iso.reloadItems(); iso.layout(); }, 500);
+    iso.reloadItems();
+    iso.layout();
 });
