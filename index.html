@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner IA - Fundo Quantitativo</title>
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<div class="header-master">
+    <h1>Scanner Confluência IA</h1>
+    <div style="display: flex; gap: 15px; align-items: center;">
+        <select id="seletor-ativo" class="styled-select">
+            <option value="EUR/USD">EUR/USD (Major)</option>
+            <option value="GBP/USD">GBP/USD (Major)</option>
+            <option value="USD/JPY">USD/JPY (Major)</option>
+            <option value="USD/CHF">USD/CHF (Major)</option>
+            <option value="AUD/USD">AUD/USD (Major)</option>
+            <option value="USD/CAD">USD/CAD (Major)</option>
+            <option value="NZD/USD">NZD/USD (Major)</option>
+        </select>
+        <div style="background: rgba(16, 185, 129, 0.2); color: var(--accent-green); padding: 8px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: bold;">● Cloud Stream Conectado</div>
+    </div>
+</div>
+
+<div class="layout-principal">
+    
+    <div class="coluna-esq">
+        <div class="card-gestao">
+            <div class="gestao-header">
+                <div style="display:flex; align-items:center; gap: 10px;">
+                    <div style="width: 40px; height: 40px; background: #0f172a; border-radius: 8px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:var(--accent-blue);">Fx</div>
+                    <div><h3 style="margin:0; font-size: 1.2rem; color: #fff;" id="ui-ativo-relatorio">EUR/USD</h3><div style="font-size: 0.75rem; color: var(--text-muted);">Análise Institucional M1</div></div>
+                </div>
+                <div style="text-align: right;"><div style="font-size: 1.6rem; font-weight: bold; color: var(--accent-blue);" id="ui-forca-sinal">--%</div></div>
+            </div>
+            <div style="padding: 20px; display: flex; flex-direction: column; gap: 20px;">
+                <div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                        <div class="alvo-card alvo-entrada"><div class="alvo-val" id="ui-alvo-entrada">0.00000</div><div class="alvo-lbl">Entrada</div></div>
+                        <div class="alvo-card alvo-sl"><div class="alvo-val" id="ui-alvo-sl">0.00000</div><div class="alvo-lbl">Stop Loss</div></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                        <div class="alvo-card alvo-tp"><div class="alvo-val" id="ui-alvo-tp1">0.00000</div><div class="alvo-lbl">TP 1</div></div>
+                        <div class="alvo-card alvo-tp"><div class="alvo-val" id="ui-alvo-tp2">0.00000</div><div class="alvo-lbl">TP 2</div></div>
+                        <div class="alvo-card alvo-tp"><div class="alvo-val" id="ui-alvo-tp3">0.00000</div><div class="alvo-lbl">TP 3</div></div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                        <div class="resumo-box"><div class="resumo-titulo">Tendência</div><div class="resumo-valor" id="ui-resumo-tendencia">--</div></div>
+                        <div class="resumo-box"><div class="resumo-titulo">Viés SMC</div><div class="resumo-valor" id="ui-resumo-smc">--</div></div>
+                    </div>
+                    <div class="resumo-box" style="display:flex; justify-content:space-around; font-weight:bold; font-size:0.85rem;">
+                        <span style="color: var(--accent-green);">✅ <span id="ui-ind-compra">0</span> C</span>
+                        <span style="color: var(--accent-red);">❌ <span id="ui-ind-venda">0</span> V</span>
+                        <span style="color: var(--accent-yellow);">➖ <span id="ui-ind-neutro">0</span> N</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="coluna-centro">
+        <div class="container-catalogacao">
+            <div class="titulo-catalogacao">
+                <span style="color: #94a3b8; font-weight: bold; text-transform: uppercase; font-size: 0.9rem;">MAPA DE CALOR - M1</span>
+                <div class="info-bar-vela">
+                    <div class="ib-grupo"><span class="ib-box ib-green-text" id="ib-qtd-verde">0</span></div>
+                    <div class="ib-grupo"><span class="ib-box ib-red-text" id="ib-qtd-vermelho">0</span></div>
+                    <div class="ib-grupo"><span class="ib-box ib-doji-text" id="ib-qtd-doji">0</span></div>
+                </div>
+                <select id="seletor-quantidade" class="styled-select" style="padding: 4px 8px; font-size: 0.8rem;">
+                    <option value="50">50 Velas</option>
+                    <option value="100" selected>100 Velas</option>
+                    <option value="200">200 Velas</option>
+                </select>
+            </div>
+            <div class="grid-catalogacao" id="ui-grid-catalogacao"></div>
+        </div>
+
+        <div class="placar-grid">
+            <div class="placar-card"><div class="raiox-name">SINAIS</div><div class="raiox-value" id="ui-placar-total">0</div></div>
+            <div class="placar-card"><div class="raiox-name color-call">WINS</div><div class="raiox-value color-call" id="ui-placar-wins">0</div></div>
+            <div class="placar-card"><div class="raiox-name color-put">LOSSES</div><div class="raiox-value color-put" id="ui-placar-losses">0</div></div>
+            <div class="placar-card"><div class="raiox-name" style="color:#3b82f6;">WIN RATE</div><div class="raiox-value" style="color:#3b82f6;" id="ui-placar-taxa">0%</div></div>
+            <div class="placar-card"><div class="raiox-name">SEQUÊNCIA</div><div class="raiox-value color-neutro">-</div></div>
+        </div>
+
+        <div class="prob-container">
+            <h2 class="prob-title">Probabilidade Direcional</h2>
+            <div class="prob-flex">
+                <div class="prob-box box-alta"><div style="font-size:0.9rem; font-weight:bold;">📈 ALTA</div><div class="prob-pct" id="ui-pct-alta">50%</div></div>
+                <div class="prob-box box-baixa"><div style="font-size:0.9rem; font-weight:bold;">📉 BAIXA</div><div class="prob-pct" id="ui-pct-baixa">50%</div></div>
+            </div>
+            <div class="split-bar-container">
+                <div class="split-green" id="ui-bar-alta" style="width: 50%;"></div>
+                <div class="split-red" id="ui-bar-baixa" style="width: 50%;"></div>
+            </div>
+        </div>
+
+        <div class="card-box">
+            <div class="robo-grid">
+                <div class="robo-card" style="border: 1px solid #3b82f6;"><div class="raiox-name">🤖 Robô 1</div><div class="raiox-value color-neutro" id="ui-robo1">LENDO</div></div>
+                <div class="robo-card" style="border: 1px solid #eab308;"><div class="raiox-name">🤖 Robô 2</div><div class="raiox-value color-neutro" id="ui-robo2">LENDO</div></div>
+                <div class="robo-card" style="border: 1px solid #ec4899;"><div class="raiox-name">🤖 Robô 3</div><div class="raiox-value color-neutro" id="ui-robo3">LENDO</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="coluna-dir">
+        <div class="card-box" style="text-align:center;">
+            <div class="raiox-name">GATILHO MESTRE</div>
+            <div class="raiox-value color-call" id="ui-status-motor">LENDO...</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);" id="ui-atualizacao">--:--:--</div>
+        </div>
+        <div class="card-box">
+            <div class="raiox-name" style="text-align:center;">RAIO-X RÁPIDO</div>
+            <div class="raiox-grid">
+                <div class="placar-card"><div class="raiox-name">EMA</div><div class="raiox-value" id="ui-raiox-ema">--</div></div>
+                <div class="placar-card"><div class="raiox-name">ADX</div><div class="raiox-value" id="ui-raiox-adx">--</div></div>
+                <div class="placar-card"><div class="raiox-name">RSI</div><div class="raiox-value" id="ui-raiox-rsi">--</div></div>
+                <div class="placar-card"><div class="raiox-name">MACD</div><div class="raiox-value" id="ui-raiox-macd">--</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
