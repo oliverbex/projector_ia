@@ -5,41 +5,34 @@ const database = firebase.database();
 const gridElement = document.querySelector('.grid-robots');
 const iso = new Isotope(gridElement, { itemSelector: '.card-robot', layoutMode: 'fitRows' });
 
+// Escuta a raiz de paridades
 database.ref('paridades').on('value', (snapshot) => {
-    const todasParidades = snapshot.val();
-    if (!todasParidades) {
-        console.log("Aguardando dados...");
-        return;
-    }
-    
+    const dados = snapshot.val();
+    if (!dados) return;
+
     gridElement.innerHTML = ''; 
 
-    Object.keys(todasParidades).forEach(key => {
-        const d = todasParidades[key];
-        // Proteção extra: verifica se relatorio_vortex existe
-        const tendencia = (d.relatorio_vortex && d.relatorio_vortex.tendencia) ? d.relatorio_vortex.tendencia : "LENDO";
-        const r1 = (d.robos && d.robos.r1) ? d.robos.r1 : { status: "LENDO", cor: "" };
-        const r2 = (d.robos && d.robos.r2) ? d.robos.r2 : { status: "LENDO", cor: "" };
-        const r3 = (d.robos && d.robos.r3) ? d.robos.r3 : { status: "LENDO", cor: "" };
-
+    Object.keys(dados).forEach(key => {
+        const d = dados[key];
         const nome = key.replace('-', '/');
         
+        // Verifica se os dados do robô existem, senão usa padrão
+        const r1 = (d.robos && d.robos.r1) ? d.robos.r1 : { status: "LENDO", cor: "" };
+        const tendencia = (d.relatorio_vortex) ? d.relatorio_vortex.tendencia : "LENDO";
+
         const cardHTML = `
             <div class="card-robot ativo">
                 <div class="card-header">
                     <span class="nome-robot">${nome}</span>
-                    <span class="badge">LIVE</span>
                 </div>
                 <div class="info-row"><span>Tendência:</span><strong>${tendencia}</strong></div>
                 <div class="robo-mini-container">
                     <div class="robo-mini ${r1.cor === 'call' ? 'status-call' : (r1.cor === 'put' ? 'status-put' : '')}">R1: ${r1.status}</div>
-                    <div class="robo-mini ${r2.cor === 'call' ? 'status-call' : (r2.cor === 'put' ? 'status-put' : '')}">R2</div>
-                    <div class="robo-mini ${r3.cor === 'call' ? 'status-call' : (r3.cor === 'put' ? 'status-put' : '')}">R3</div>
                 </div>
             </div>`;
         gridElement.insertAdjacentHTML('beforeend', cardHTML);
     });
     
-    iso.reloadItems();
-    iso.layout();
+    // Força o Isotope a reorganizar os novos cards
+    setTimeout(() => { iso.reloadItems(); iso.layout(); }, 300);
 });
