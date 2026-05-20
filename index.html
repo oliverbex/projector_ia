@@ -53,12 +53,6 @@
         .box-verde { background-color: #10b981; } .box-vermelho { background-color: #ef4444; } .box-doji { background-color: #64748b; color: #cbd5e1; }
         .raiox-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
         .grid-duplo { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .news-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #0f172a; border-left: 4px solid var(--border-color); margin-bottom: 8px; border-radius: 4px; }
-        .bg-impact-alta { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); } .bg-impact-media { background: rgba(234, 179, 8, 0.2); color: var(--accent-yellow); } .bg-impact-baixa { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
-        .hm-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin-bottom: 4px; }
-        .hm-box { background: #334155; border-radius: 4px; padding: 6px 0; text-align: center; font-size: 0.7rem; font-weight: bold; color: #fff; position: relative;}
-        .hm-verde { background-color: var(--accent-green); } .hm-amarelo { background-color: var(--accent-yellow); color: #000; } .hm-vermelho { background-color: #991b1b; color: #cbd5e1; }
-        .hm-agora { border: 2px solid #00FFFF; transform: scale(1.1); z-index: 5;}
     </style>
 </head>
 <body>
@@ -183,9 +177,6 @@
 </div>
 
 <script>
-    // =========================================================================
-    // CONFIGURAÇÃO DO FIREBASE (A MESMA DO PYTHON)
-    // =========================================================================
     const firebaseConfig = {
         databaseURL: "https://projeto-ia-a37ba-default-rtdb.firebaseio.com/"
     };
@@ -196,12 +187,9 @@
     const seletorQtd = document.getElementById('seletor-quantidade');
     let listenerAtual = null;
 
-    // ATUALIZAÇÃO INTELIGENTE: Só escreve na tela se o valor realmente mudou
     function smartUpdateText(id, novoTexto) {
         const el = document.getElementById(id);
-        if (el && el.innerText !== String(novoTexto)) {
-            el.innerText = novoTexto;
-        }
+        if (el && el.innerText !== String(novoTexto)) { el.innerText = novoTexto; }
     }
 
     function formatarCard(elemento, valor) {
@@ -234,12 +222,8 @@
         }
     }
 
-    // =========================================================================
-    // OBSERVA O FIREBASE EM TEMPO REAL COM DOM DIFFING
-    // =========================================================================
     function escutarNuvem() {
         const paridadeFormatada = seletor.value.replace('/', '-');
-        
         if (listenerAtual) { database.ref('paridades').off('value', listenerAtual); }
 
         listenerAtual = database.ref('paridades/' + paridadeFormatada).on('value', (snapshot) => {
@@ -281,7 +265,6 @@
                 document.getElementById('ui-bar-baixa').style.width = pPut + "%";
             }
 
-            // ATUALIZAÇÃO INTELIGENTE DO MAPA DE CALOR
             if (data.catalogacao) {
                 const qtd = parseInt(seletorQtd.value);
                 const velasFiltradas = data.catalogacao.slice(-qtd);
@@ -297,7 +280,6 @@
                     htmlCaixas += `<div class="box-vela ${classeCor}" title="${vela.hora}">${vela.hora}</div>`;
                 });
                 
-                // O Segredo contra o "Pisca-Pisca": Só redesenha se a string HTML for diferente!
                 if (gridCatalogacao.innerHTML !== htmlCaixas) {
                     gridCatalogacao.innerHTML = htmlCaixas;
                     smartUpdateText('ib-qtd-verde', cv);
@@ -306,7 +288,6 @@
                 }
             }
 
-            // ATUALIZAÇÃO DOS ROBÔS
             if (data.robos) {
                 formatarCardRobo(document.getElementById('ui-robo1'), data.robos.r1.status, data.robos.r1.cor);
                 formatarCardRobo(document.getElementById('ui-robo2'), data.robos.r2.status, data.robos.r2.cor);
@@ -332,7 +313,6 @@
     });
     
     seletorQtd.addEventListener('change', escutarNuvem);
-
     escutarNuvem();
 </script>
 </body>
