@@ -139,7 +139,7 @@
             <div class="placar-card"><div class="raiox-name">SINAIS</div><div class="raiox-value" id="ui-placar-total">0</div></div>
             <div class="placar-card"><div class="raiox-name color-call">WINS</div><div class="raiox-value color-call" id="ui-placar-wins">0</div></div>
             <div class="placar-card"><div class="raiox-name color-put">LOSSES</div><div class="raiox-value color-put" id="ui-placar-losses">0</div></div>
-            <div class="placar-card"><div class="raiox-name" style="color:#3b82f6;">WIN RATE</div><div class="raiox-value" style="color:#3b82f6;" id="ui-placar-taxa">0.0%</div></div>
+            <div class="placar-card"><div class="raiox-name" style="color:#3b82f6;">WIN RATE</div><div class="raiox-value" style="color:#3b82f6;" id="ui-placar-taxa">0%</div></div>
             <div class="placar-card"><div class="raiox-name">SEQUÊNCIA</div><div class="raiox-value color-neutro">-</div></div>
         </div>
 
@@ -171,7 +171,7 @@
             <div style="font-size: 0.8rem; color: var(--text-muted);" id="ui-atualizacao">--:--:--</div>
         </div>
         <div class="card-box">
-            <div class="raiox-name" style="text-align:center; margin-bottom: 10px;">RAIO-X RÁPIDO</div>
+            <div class="raiox-name" style="text-align:center;">RAIO-X RÁPIDO</div>
             <div class="raiox-grid">
                 <div class="placar-card"><div class="raiox-name">EMA</div><div class="raiox-value" id="ui-raiox-ema">--</div></div>
                 <div class="placar-card"><div class="raiox-name">ADX</div><div class="raiox-value" id="ui-raiox-adx">--</div></div>
@@ -196,30 +196,58 @@
     const seletorQtd = document.getElementById('seletor-quantidade');
     let listenerAtual = null;
 
+    // ATUALIZAÇÃO INTELIGENTE: Só escreve na tela se o valor realmente mudou
+    function smartUpdateText(id, novoTexto) {
+        const el = document.getElementById(id);
+        if (el && el.innerText !== String(novoTexto)) {
+            el.innerText = novoTexto;
+        }
+    }
+
     function formatarCard(elemento, valor) {
         if(!elemento) return;
-        elemento.innerText = valor;
-        elemento.className = "raiox-value"; 
-        if(valor === "COMPRA" || valor === "FORTE") elemento.classList.add("color-call");
-        else if (valor === "VENDA" || valor === "FRACO") elemento.classList.add("color-put");
-        else elemento.classList.add("color-neutro");
+        if (elemento.innerText !== valor) {
+            elemento.innerText = valor;
+            elemento.className = "raiox-value"; 
+            if(valor === "COMPRA" || valor === "FORTE") elemento.classList.add("color-call");
+            else if (valor === "VENDA" || valor === "FRACO") elemento.classList.add("color-put");
+            else elemento.classList.add("color-neutro");
+        }
+    }
+
+    function formatarCardRobo(elemento, status, cor) {
+        if(!elemento) return;
+        if (elemento.innerText !== status) {
+            elemento.innerText = status;
+            elemento.className = "raiox-value"; 
+            if(cor === "call") elemento.classList.add("color-call");
+            else if (cor === "put") elemento.classList.add("color-put");
+            else elemento.classList.add("color-neutro");
+        }
+    }
+
+    function formatarTendencia(id, valor) {
+        const el = document.getElementById(id);
+        if (el && el.innerText !== valor) {
+            el.innerText = valor;
+            el.className = valor === "COMPRA" || valor === "COMPRADOR" ? "resumo-valor color-call" : "resumo-valor color-put";
+        }
     }
 
     // =========================================================================
-    // OBSERVA O FIREBASE EM TEMPO REAL
+    // OBSERVA O FIREBASE EM TEMPO REAL COM DOM DIFFING
     // =========================================================================
     function escutarNuvem() {
         const paridadeFormatada = seletor.value.replace('/', '-');
         
-        // Remove o ouvinte da moeda anterior para não misturar os dados
         if (listenerAtual) { database.ref('paridades').off('value', listenerAtual); }
 
         listenerAtual = database.ref('paridades/' + paridadeFormatada).on('value', (snapshot) => {
             const data = snapshot.val();
             if (!data) return;
 
-            document.getElementById('ui-atualizacao').innerText = "Última leitura: " + data.atualizacao;
-            document.getElementById('ui-status-motor').innerText = data.timeframes.M1;
+            smartUpdateText('ui-atualizacao', "Última leitura: " + data.atualizacao);
+            smartUpdateText('ui-status-motor', data.timeframes.M1);
 
             formatarCard(document.getElementById('ui-raiox-ema'), data.raiox.ema);
             formatarCard(document.getElementById('ui-raiox-adx'), data.raiox.adx);
@@ -227,34 +255,33 @@
             formatarCard(document.getElementById('ui-raiox-macd'), data.raiox.macd);
 
             if(data.relatorio_vortex) {
-                document.getElementById('ui-forca-sinal').innerText = data.relatorio_vortex.forca + "%";
-                document.getElementById('ui-alvo-entrada').innerText = data.relatorio_vortex.entrada.toFixed(5);
-                document.getElementById('ui-alvo-sl').innerText = data.relatorio_vortex.sl.toFixed(5);
-                document.getElementById('ui-alvo-tp1').innerText = data.relatorio_vortex.tp1.toFixed(5);
-                document.getElementById('ui-alvo-tp2').innerText = data.relatorio_vortex.tp2.toFixed(5);
-                document.getElementById('ui-alvo-tp3').innerText = data.relatorio_vortex.tp3.toFixed(5);
+                smartUpdateText('ui-forca-sinal', data.relatorio_vortex.forca + "%");
+                smartUpdateText('ui-alvo-entrada', data.relatorio_vortex.entrada.toFixed(5));
+                smartUpdateText('ui-alvo-sl', data.relatorio_vortex.sl.toFixed(5));
+                smartUpdateText('ui-alvo-tp1', data.relatorio_vortex.tp1.toFixed(5));
+                smartUpdateText('ui-alvo-tp2', data.relatorio_vortex.tp2.toFixed(5));
+                smartUpdateText('ui-alvo-tp3', data.relatorio_vortex.tp3.toFixed(5));
                 
-                let elTendencia = document.getElementById('ui-resumo-tendencia');
-                elTendencia.innerText = data.relatorio_vortex.tendencia;
-                elTendencia.className = data.relatorio_vortex.tendencia === "COMPRA" ? "resumo-valor color-call" : "resumo-valor color-put";
+                formatarTendencia('ui-resumo-tendencia', data.relatorio_vortex.tendencia);
+                formatarTendencia('ui-resumo-smc', data.relatorio_vortex.smc);
 
-                let elSmc = document.getElementById('ui-resumo-smc');
-                elSmc.innerText = data.relatorio_vortex.smc;
-                elSmc.className = data.relatorio_vortex.smc === "COMPRADOR" ? "resumo-valor color-call" : "resumo-valor color-put";
-
-                document.getElementById('ui-ind-compra').innerText = data.relatorio_vortex.compra;
-                document.getElementById('ui-ind-venda').innerText = data.relatorio_vortex.venda;
-                document.getElementById('ui-ind-neutro').innerText = data.relatorio_vortex.neutro;
+                smartUpdateText('ui-ind-compra', data.relatorio_vortex.compra);
+                smartUpdateText('ui-ind-venda', data.relatorio_vortex.venda);
+                smartUpdateText('ui-ind-neutro', data.relatorio_vortex.neutro);
             }
 
             let pCall = Math.round(data.probabilidadeCall);
             let pPut = Math.round(data.probabilidadePut);
-            document.getElementById('ui-pct-alta').innerText = pCall + "%";
-            document.getElementById('ui-pct-baixa').innerText = pPut + "%";
-            document.getElementById('ui-bar-alta').style.width = pCall + "%";
-            document.getElementById('ui-bar-baixa').style.width = pPut + "%";
+            smartUpdateText('ui-pct-alta', pCall + "%");
+            smartUpdateText('ui-pct-baixa', pPut + "%");
+            
+            const barAlta = document.getElementById('ui-bar-alta');
+            if (barAlta.style.width !== pCall + "%") {
+                barAlta.style.width = pCall + "%";
+                document.getElementById('ui-bar-baixa').style.width = pPut + "%";
+            }
 
-            // MONTA O MAPA DE CALOR
+            // ATUALIZAÇÃO INTELIGENTE DO MAPA DE CALOR
             if (data.catalogacao) {
                 const qtd = parseInt(seletorQtd.value);
                 const velasFiltradas = data.catalogacao.slice(-qtd);
@@ -269,10 +296,21 @@
                     else { cd++; }
                     htmlCaixas += `<div class="box-vela ${classeCor}" title="${vela.hora}">${vela.hora}</div>`;
                 });
-                gridCatalogacao.innerHTML = htmlCaixas;
-                document.getElementById('ib-qtd-verde').innerText = cv;
-                document.getElementById('ib-qtd-vermelho').innerText = cvr;
-                document.getElementById('ib-qtd-doji').innerText = cd;
+                
+                // O Segredo contra o "Pisca-Pisca": Só redesenha se a string HTML for diferente!
+                if (gridCatalogacao.innerHTML !== htmlCaixas) {
+                    gridCatalogacao.innerHTML = htmlCaixas;
+                    smartUpdateText('ib-qtd-verde', cv);
+                    smartUpdateText('ib-qtd-vermelho', cvr);
+                    smartUpdateText('ib-qtd-doji', cd);
+                }
+            }
+
+            // ATUALIZAÇÃO DOS ROBÔS
+            if (data.robos) {
+                formatarCardRobo(document.getElementById('ui-robo1'), data.robos.r1.status, data.robos.r1.cor);
+                formatarCardRobo(document.getElementById('ui-robo2'), data.robos.r2.status, data.robos.r2.cor);
+                formatarCardRobo(document.getElementById('ui-robo3'), data.robos.r3.status, data.robos.r3.cor);
             }
         });
     }
@@ -280,11 +318,11 @@
     database.ref('sistema/placar').on('value', (snapshot) => {
         const placar = snapshot.val();
         if(placar) {
-            document.getElementById('ui-placar-total').innerText = placar.total;
-            document.getElementById('ui-placar-wins').innerText = placar.wins;
-            document.getElementById('ui-placar-losses').innerText = placar.losses;
+            smartUpdateText('ui-placar-total', placar.total);
+            smartUpdateText('ui-placar-wins', placar.wins);
+            smartUpdateText('ui-placar-losses', placar.losses);
             let taxa = placar.total > 0 ? Math.round((placar.wins / placar.total) * 100) : 0;
-            document.getElementById('ui-placar-taxa').innerText = taxa + "%";
+            smartUpdateText('ui-placar-taxa', taxa + "%");
         }
     });
 
