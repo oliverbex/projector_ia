@@ -13,16 +13,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         gridElement.innerHTML = ''; 
         
-        // Pega a primeira paridade disponível para o Mapa de Calor
-        const keys = Object.keys(dados);
-        const primeiraParidade = dados[keys[0]];
-        
-        // Renderiza Mapa de Calor
-        if(primeiraParidade.catalogacao && heatmapElement) {
-            heatmapElement.innerHTML = primeiraParidade.catalogacao.slice(-100).map(v => 
-                `<div class="box-vela ${v.cor === 'verde' ? 'box-verde' : v.cor === 'vermelho' ? 'box-vermelho' : 'box-doji'}"></div>`
-            ).join('');
-        }
+// ... dentro da função database.ref('paridades').on('value', ...)
+
+const keys = Object.keys(dados);
+const nomePrimeiraParidade = keys[0]; // Ex: "AUD-USD"
+const primeiraParidade = dados[nomePrimeiraParidade];
+
+// 1. Atualiza o Título com o nome da paridade
+const tituloElement = document.getElementById('nome-paridade-heatmap');
+if (tituloElement) {
+    tituloElement.innerText = nomePrimeiraParidade.replace('-', '/');
+}
+
+// 2. Renderiza Mapa de Calor
+if(primeiraParidade.catalogacao && heatmapElement) {
+    heatmapElement.innerHTML = primeiraParidade.catalogacao.slice(-100).map(v => 
+        `<div class="box-vela ${v.cor === 'verde' ? 'box-verde' : v.cor === 'vermelho' ? 'box-vermelho' : 'box-doji'}"></div>`
+    ).join('');
+}
 
         // Renderiza Cards dos Robôs
         keys.forEach(key => {
